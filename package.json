@@ -1,0 +1,23 @@
+{
+  "name": "slack_analyzer",
+  "version": "1.0.0",
+  "description": "msg parser",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vgulaev/slack_analyzer.git"
+  },
+  "author": "vgulaev",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vgulaev/slack_analyzer/issues"
+  },
+  "homepage": "https://github.com/vgulaev/slack_analyzer#readme",
+  "dependencies": {
+    "@slack/web-api": "^6.4.0",
+    "pg": "^8.7.1"
+  }
+}
