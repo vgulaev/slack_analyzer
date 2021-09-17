@@ -1,5 +1,6 @@
 const { Client } = require('pg')
 const { config } = require('../config')
+const { SQLTable } = require('./sqlTable')
 const fs = require('fs')
 
 class DB {
@@ -26,10 +27,6 @@ class DB {
     })
   }
 
-  constructor() {
-    this.adminDBClient = this.dbConnection('postgres');
-  }
-
   createDB() {
     return new Promise((resolve, rej) => {
       this
@@ -50,9 +47,16 @@ class DB {
       .map(fileName => fs.readFileSync(`${rootPath}/${fileName}`, 'utf-8'))
   }
 
+  tableQueries() {
+    if (!this._tableQueries) {
+      this._tableQueries = this.loadTableQueries()
+    }
+    return this._tableQueries
+  }
+
   createTables() {
     return new Promise((resolve, rej) => {
-      let queries = this.loadTableQueries()
+      let queries = this.tableQueries()
       this.client.query(queries.join('\n'), (err, res) => {
         resolve()
       })
@@ -70,7 +74,8 @@ class DB {
     })
   }
 
-  init() {
+  reCreateDB() {
+    this.adminDBClient = this.dbConnection('postgres');
     return new Promise((resolve, rej) => {
       this.checkDBExistanse().then((isDbExists) => {
         return this.deleteDBifExist(isDbExists);
@@ -84,11 +89,40 @@ class DB {
         return this.createTables()
       })
       .then(() => {
-        this.client.end()
-        resolve()
+        resolve(this)
       })
     })
   }
+
+  constructTableRowObjectsFromTableQueries() {
+    this.tables = {}
+    this.tableQueries().forEach(query => {
+      let metaClass = SQLTable.buildClass(query, this)
+      this.tables[metaClass.name] = metaClass
+    })
+  }
+
+  init({ ...params } = {}) {
+    this.constructTableRowObjectsFromTableQueries()
+    return new Promise((resolve, rej) => {
+      if (params.skipRecreation) {
+        this.client = this.dbConnection(config.postgre.database)
+        return resolve(this)
+      } else {
+        this.reCreateDB().then(() => resolve())
+      }
+    })
+  }
+
+  end() {
+    this.client.end()
+  }
+
 }
 
-exports.db = new DB()
+const db = new DB()
+
+SQLTable.db = db
+SQLTable.assignDBtoSQLTableRow(db)
+
+exports.db = db
