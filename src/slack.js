@@ -32,6 +32,16 @@ exports.Slack = class Slack {
   }
 
   pushChannelsToDB() {
-    console.log(testData)
+    return new Promise((resolve, rej) => {
+      let ins = []
+      testData.channels.forEach(channel => {
+        let c = this.db.tables.channels.add(channel)
+        c.raw = JSON.stringify(channel)
+        ins.push(c.save())
+      })
+      Promise.all(ins).then(values => {
+        resolve()
+      })
+    })
   }
 }

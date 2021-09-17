@@ -19,12 +19,11 @@ function getProps(query) {
 exports.SQLTable = class SQLTable {
   static buildClass(query, db) {
     let meta = new SQLMetaTable(query)
-    // let rowClass = SQLTableRow.buildClass(query, db, meta)
     let table = {
       db: db,
       name: meta.name,
-      add: () => {
-        return new SQLTableRow(query, db, meta)
+      add: (attrs) => {
+        return new SQLTableRow(meta, attrs)
       }
     }
     return table
