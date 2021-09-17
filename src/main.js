@@ -7,6 +7,7 @@ db.init({ skipRecreation: true }).then((db) => {
   return slack.pushChannelsToDB()
   //db.end()
 })
-  .then(() => {
+  .then((data) => {
+    console.log(data)
     db.end()
   })

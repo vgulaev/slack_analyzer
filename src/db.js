@@ -27,6 +27,12 @@ class DB {
     })
   }
 
+  query(sql) {
+    return new Promise((resolve, rej) => {
+      this.client.query(sql, (err, res) => resolve({err: err, res: res}))
+    })
+  }
+
   createDB() {
     return new Promise((resolve, rej) => {
       this
