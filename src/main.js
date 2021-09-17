@@ -1,5 +1,5 @@
 const { db } = require('./db')
 
-db.init()
-
-console.log('Slack analyzer');
+db.init().then(() => {
+  console.log('Slack analyzer');
+})

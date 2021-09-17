@@ -1,5 +1,6 @@
 const { Client } = require('pg')
 const { config } = require('../config')
+const fs = require('fs')
 
 class DB {
   createDB() {
@@ -27,7 +28,6 @@ class DB {
 
   constructor() {
     this.adminDBClient = this.dbConnection('postgres');
-    // this.dbClient = this.dbConnection(config.postgre.database);
   }
 
   createDB() {
@@ -36,43 +36,59 @@ class DB {
         .adminDBClient
         .query(
           `CREATE DATABASE ${config.postgre.database}`, (err, res) => {
+            this.adminDBClient.end()
+            delete this.adminDBClient
             resolve()
           })
     })
   }
 
-  createTables() {
-    console.log('createTables')
+  loadTableQueries() {
+    let rootPath = './src/SQL/Tables'
+    return fs
+      .readdirSync(rootPath)
+      .map(fileName => fs.readFileSync(`${rootPath}/${fileName}`, 'utf-8'))
   }
 
-  deleteDBifExist(is_DbExists) {
+  createTables() {
     return new Promise((resolve, rej) => {
-      if (!is_DbExists) {
-        console.log('db not exist')
+      let queries = this.loadTableQueries()
+      this.client.query(queries.join('\n'), (err, res) => {
         resolve()
-        return
+      })
+    })
+  }
+
+  deleteDBifExist(isDbExists) {
+    return new Promise((resolve, rej) => {
+      if (!isDbExists) {
+        return resolve()
       }
-      console.log('Should be delete DB')
-      resolve()
+      this.adminDBClient.query(`DROP DATABASE ${config.postgre.database}`, (err, res) => {
+        resolve()
+      })
     })
   }
 
   init() {
-    this.checkDBExistanse().then(
-      (is_DbExists) => {
-        return this.deleteDBifExist(is_DbExists);
-      }
-    )
-    .then(() => {
-      let p = this.createDB()
-      this.adminDBClient.end()
-      delete this.adminDBClient
-      return p
-    })
-    .then(() => {
-      this.createTables()
+    return new Promise((resolve, rej) => {
+      this.checkDBExistanse().then((isDbExists) => {
+        return this.deleteDBifExist(isDbExists);
+      })
+      .then(() => {
+        let p = this.createDB()
+        return p
+      })
+      .then(() => {
+        this.client = this.dbConnection(config.postgre.database)
+        return this.createTables()
+      })
+      .then(() => {
+        this.client.end()
+        resolve()
+      })
     })
   }
 }
 
-exports.db = new DB();
+exports.db = new DB()
