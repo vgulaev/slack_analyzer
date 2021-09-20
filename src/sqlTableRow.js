@@ -20,7 +20,7 @@ class SQLTableRow {
       }
     })
     let keys = Object.keys(obj)
-    let values = keys.map(k => `'${obj[k]}'`).join(',')
+    let values = keys.map(k => 'raw' == k ? `$VG$${obj[k]}$VG$`: `'${obj[k]}'`).join(',')
     return `INSERT INTO ${this.meta.name} (${keys.join(',')}) VALUES(${values})`
   }
 
@@ -33,6 +33,8 @@ class SQLTableRow {
           result = (1 == res.rowCount)
         } else {
           result = err
+          // console.log(this.raw)
+          // exit()
         }
         resolve(result)
       })

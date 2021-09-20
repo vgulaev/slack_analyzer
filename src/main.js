@@ -1,13 +1,20 @@
 const { db } = require('./db')
 const { Slack } = require('./slack')
 
-// db.init().then(() => {
-db.init({ skipRecreation: true }).then((db) => {
-  let slack = new Slack(db)
-  return slack.pushChannelsToDB()
-  //db.end()
-})
+let slack;
+
+db.init({ skipRecreation: true })
+  .then((db) => {
+    slack = new Slack(db)
+    return Promise.resolve(slack)
+  })
+  // .then(() => {
+  //   return slack.pushChannelsToDB()
+  // })
+  .then((res) => {
+    return slack.fetchHistory()
+  })
   .then((data) => {
-    console.log(data)
+    console.log('***', data)
     db.end()
   })
