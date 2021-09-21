@@ -13,9 +13,14 @@ db.init({ skipRecreation: true })
   // .then(() => {
   //   return slack.pushChannelsToDB()
   // })
-  .then((res) => {
-    return slack.fetchHistory()
-  })
+  // .then(() => {
+  //   return db.tables.users.truncate()
+  //     .then(() => slack.pushUsersToDB())
+  //   // return slack.pushUsersToDB()
+  // })
+  // .then(() => {
+  //   return slack.fetchHistory()
+  // })
   // .then((res) => {
   //   return slack.manyRequests()
   // })

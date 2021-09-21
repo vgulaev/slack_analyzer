@@ -1,5 +1,6 @@
 const { SQLTableRow } = require('./sqlTableRow')
 const { SQLMetaTable } = require('./sqlMetaTable')
+const { config } = require('../config')
 
 const setClause = (data) => {
   return Object.keys(data).map(k => `${k}='${data[k]}'`).join(',')
@@ -37,7 +38,11 @@ exports.SQLTable = class SQLTable {
           'mini360_slack_analyze_debug'
         ].map(c => `'${c}'`).join(',')
         return SQLTable.db.query(`SELECT * FROM channels WHERE "raw"->>'is_archived' = 'false'
-          and name <> 'trading_desk_risks' and name in (${debugChannels})`)
+        AND (name not in (${config.excludeFromHistory.map(c => `'${c}'`).join(',')}) OR name is null)
+        and (history_retrieved is null
+        OR history_retrieved < '2021-09-21 21:10:00')
+        order by name asc`)
+          // AND name in (${debugChannels}) OR id = 'D02EEDZS5E3'
       },
       unparsedMsgs: () => {
         let query = `SELECT id, channel_id, "user", reply_count, subtype, "raw"->>'text' as text, ts, msg_date_time, parsed, "raw"

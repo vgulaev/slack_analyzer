@@ -15,7 +15,7 @@ exports.Slack = class Slack {
   fetchAllConversations(cursor) {
     let params = {
       token: config.token.slack,
-      types: 'public_channel, private_channel, mpim, im'
+      types: 'public_channel,private_channel,mpim,im'
     }
 
     return new Promise((resolve, rej) => {
@@ -100,7 +100,7 @@ exports.Slack = class Slack {
             return row
           })
           this.saveOneByOne(rows)
-          console.log(`${rows.length} msg loaded`)
+          console.log(`From ${channel.id} name: '${channel.name}' ${rows.length} msg loaded`)
           if (rows.length > 0) {
             let max = msgs.map(msg => msg.ts).sort()[rows.length - 1]
             params.oldest = max
@@ -139,18 +139,39 @@ exports.Slack = class Slack {
       })
   }
 
-  manyRequests() {
-    console.log('manyRequests')
-    for (let i = 0; i < 200; i++) {
-      this.client.conversations.history({
-        channel: 'C61QSMX6E',
-        limit: 10
-      })
-      .then((res) => {
-        console.log('******************')
-        return res.messages
-      })
-      console.log(i)
+  pushUsersToDB() {
+    let users = []
+
+    let params = {
+      // limit: 2
     }
+
+    const fetchData = (cursor) => {
+      if (cursor) {
+        params.cursor = cursor
+      }
+
+      return this.client.users.list(params)
+        .then((res) => {
+          users.push(...res.members)
+          if (res.response_metadata && res.response_metadata.next_cursor) {
+            return fetchData(res.response_metadata.next_cursor)
+          }
+          return Promise.resolve()
+        })
+    }
+
+    return fetchData()
+      .then(() => {
+        let rows = users.map( u => {
+          // console.log(u)
+          let newUser = this.db.tables.users.add(u)
+          newUser.real_name = u.profile.real_name
+          newUser.email = u.profile.email
+          newUser.raw = JSON.stringify(u)
+          return newUser.save()
+        })
+        return Promise.all(rows)
+      })
   }
 }
