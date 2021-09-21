@@ -68,16 +68,7 @@ exports.Slack = class Slack {
   joinToChannel(channel) {
     return this.client.conversations.join({
       channel: channel.id
-      // users: 'U019PGXKZ7C'
     })
-      .then((res) => {
-        console.log('Here Im');
-        return Promise.resolve()
-      })
-      .catch(err => console.log(err))
-    // app.client.conversations.invite
-    // console.log('should join')
-    // return Promise.resolve()
   }
 
   fetchHistoryForSingleChannel(channel, oldestFromDb) {
@@ -94,32 +85,33 @@ exports.Slack = class Slack {
     const fetchData = () => {
       return this.client.conversations.history(params)
         .then((res) => {
+          fs.writeFileSync(`./tmp/res-${dateToSQLFormat(new Date).replace(/:/g, '-')} - ${channel.id} - ${params.oldest}.json`, JSON.stringify(res, null, 2), 'utf-8')
           if (!((true == res.ok) && (res.messages.length > 0))) {
-            return Promise.resolve([])
+            return []
           }
-          return Promise.resolve(res.messages)
+          return res.messages
         })
         .then(msgs => {
           let rows = msgs.map(msg => {
             let row = this.db.tables.channel_history.add(msg)
             row.channel_id = channel.id
-            row.user_id = msg.user
-            row.reply_count = msg.reply_count
             row.msg_date_time = dateToSQLFormat(new Date(msg.ts * 1000))
             row.raw = JSON.stringify(msg)
             return row
           })
           this.saveOneByOne(rows)
+          console.log(`${rows.length} msg loaded`)
           if (rows.length > 0) {
             let max = msgs.map(msg => msg.ts).sort()[rows.length - 1]
             params.oldest = max
-            console.log(msgs.map(msg => msg.ts), max, rows.length)
             return fetchData()
           }
         })
         .catch(err => {
           if (err.data && 'not_in_channel' == err.data.error) {
             return this.joinToChannel(channel)
+              .then(fetchData())
+              .catch(err => console.log(err))
           } else {
             console.log(err)
           }
@@ -130,19 +122,35 @@ exports.Slack = class Slack {
 
   fetchHistory() {
     let channel
-    return this.db.tables.channel_history.truncate()
-      .then(() => this.db.tables.channels.select())
-    // return this.db.tables.channels.select()
-      .then((res) => {
-        // console.log(res)
-        channel = res.res.rows[0]
-        return this.db.tables.channels.ts_last_msg(res.res.rows[0].id)
-      })
-      .then((oldestFromDb) => {
-        return this.fetchHistoryForSingleChannel(channel, oldestFromDb)
-          //.then(() => db.tables.channels.update())
-      })
 
-    // console.log('fetchHistory')
+    const fetchData = (channel) => {
+      return this.db.tables.channels.ts_last_msg(channel.id)
+        .then((oldestFromDb) => {
+          return this.fetchHistoryForSingleChannel(channel, oldestFromDb)
+            .then(() => this.db.tables.channels.update({id: channel.id}, {history_retrieved: dateToSQLFormat(new Date)}))
+        })
+    }
+
+    return this.db.tables.channels.activeChannels()
+      .then((res) => {
+        return res.res.rows.reduce((p, channel) => {
+          return p.then(() => fetchData(channel))
+        }, Promise.resolve())
+      })
+  }
+
+  manyRequests() {
+    console.log('manyRequests')
+    for (let i = 0; i < 200; i++) {
+      this.client.conversations.history({
+        channel: 'C61QSMX6E',
+        limit: 10
+      })
+      .then((res) => {
+        console.log('******************')
+        return res.messages
+      })
+      console.log(i)
+    }
   }
 }

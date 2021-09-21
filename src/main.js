@@ -14,7 +14,9 @@ db.init({ skipRecreation: true })
   .then((res) => {
     return slack.fetchHistory()
   })
+  // .then((res) => {
+  //   return slack.manyRequests()
+  // })
   .then((data) => {
-    console.log('***', data)
     db.end()
   })

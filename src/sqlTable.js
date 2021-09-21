@@ -1,6 +1,14 @@
 const { SQLTableRow } = require('./sqlTableRow')
 const { SQLMetaTable } = require('./sqlMetaTable')
 
+const setClause = (data) => {
+  return Object.keys(data).map(k => `${k}='${data[k]}'`).join(',')
+}
+
+const whereClause = (where) => {
+  return Object.keys(where).map(k => `${k}='${where[k]}'`).join(' and ')
+}
+
 exports.SQLTable = class SQLTable {
   static buildClass(query, db) {
     let meta = new SQLMetaTable(query)
@@ -18,7 +26,13 @@ exports.SQLTable = class SQLTable {
         // return SQLTable.db.query(`SELECT * FROM ${meta.name} WHERE id = 'D02BVBM8P16'`)
         // return SQLTable.db.query(`SELECT * FROM ${meta.name} WHERE name = 'mini360_slack_analyze_debug'`)
         // return SQLTable.db.query(`SELECT * FROM ${meta.name} WHERE name = 'ceomessage'`)
-        return SQLTable.db.query(`SELECT * FROM ${meta.name} WHERE name = 'hr_performance'`)
+        // return SQLTable.db.query(`SELECT * FROM ${meta.name} WHERE name = 'hr_performance'`)
+        return SQLTable.db.query(`SELECT * FROM ${meta.name}`)
+      },
+      activeChannels: () => {
+        return SQLTable.db.query(`SELECT * FROM channels WHERE "raw"->>'is_archived' = 'false'
+          and name <> 'trading_desk_risks' and name in ('ceomessage', 'hr_performance',
+          'platform-ops-dev', 'platform_ops', 'mini360_slack_analyze_debug')`)
       },
       ts_last_msg: (channel_id) => {
         let query = `SELECT max(ts) FROM channel_history WHERE channel_id = '${channel_id}'`
@@ -33,6 +47,10 @@ exports.SQLTable = class SQLTable {
             return resolve(result)
           })
         })
+      },
+      update: (where, data) => {
+        let query = `UPDATE ${meta.name} SET ${setClause(data)} WHERE ${whereClause(where)}`
+        return SQLTable.db.query(query)
       }
     }
     return table

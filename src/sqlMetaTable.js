@@ -6,7 +6,7 @@ function getName(lines) {
 function getProps(lines) {
   return lines
     .filter((line, indx) => (indx > 0) && (');' != line) )
-    .map(line => line.trim().split(' ')[0])
+    .map(line => line.trim().split(' ')[0]).map(line => line.replace(/"/g, ''))
 }
 
 exports.SQLMetaTable = class SQLMetaTable {
@@ -14,6 +14,7 @@ exports.SQLMetaTable = class SQLMetaTable {
     let splited = query.trim().split('\n')
     this.name = getName(splited)
     this.props = getProps(splited)
+    console.log(this.props)
     this.blankObject = {}
     this.props.forEach(prop => this.blankObject[prop] = undefined)
   }

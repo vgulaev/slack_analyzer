@@ -21,7 +21,7 @@ class SQLTableRow {
     })
     let keys = Object.keys(obj)
     let values = keys.map(k => 'raw' == k ? `$VG$${obj[k]}$VG$`: `'${obj[k]}'`).join(',')
-    return `INSERT INTO ${this.meta.name} (${keys.join(',')}) VALUES(${values})`
+    return `INSERT INTO ${this.meta.name} (${keys.map(k => `"${k}"`).join(',')}) VALUES(${values})`
   }
 
   save() {
