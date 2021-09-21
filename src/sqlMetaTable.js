@@ -14,7 +14,6 @@ exports.SQLMetaTable = class SQLMetaTable {
     let splited = query.trim().split('\n')
     this.name = getName(splited)
     this.props = getProps(splited)
-    console.log(this.props)
     this.blankObject = {}
     this.props.forEach(prop => this.blankObject[prop] = undefined)
   }

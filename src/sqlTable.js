@@ -22,7 +22,6 @@ exports.SQLTable = class SQLTable {
         return SQLTable.db.query(`TRUNCATE ${meta.name}`)
       },
       select: () => {
-
         // return SQLTable.db.query(`SELECT * FROM ${meta.name} WHERE id = 'D02BVBM8P16'`)
         // return SQLTable.db.query(`SELECT * FROM ${meta.name} WHERE name = 'mini360_slack_analyze_debug'`)
         // return SQLTable.db.query(`SELECT * FROM ${meta.name} WHERE name = 'ceomessage'`)
@@ -30,9 +29,22 @@ exports.SQLTable = class SQLTable {
         return SQLTable.db.query(`SELECT * FROM ${meta.name}`)
       },
       activeChannels: () => {
+        let debugChannels = [
+          'ceomessage',
+          'hr_performance',
+          'platform-ops-dev',
+          'platform_ops',
+          'mini360_slack_analyze_debug'
+        ].map(c => `'${c}'`).join(',')
         return SQLTable.db.query(`SELECT * FROM channels WHERE "raw"->>'is_archived' = 'false'
-          and name <> 'trading_desk_risks' and name in ('ceomessage', 'hr_performance',
-          'platform-ops-dev', 'platform_ops', 'mini360_slack_analyze_debug')`)
+          and name <> 'trading_desk_risks' and name in (${debugChannels})`)
+      },
+      unparsedMsgs: () => {
+        let query = `SELECT id, channel_id, "user", reply_count, subtype, "raw"->>'text' as text, ts, msg_date_time, parsed, "raw"
+        FROM public.channel_history
+        where "user" is not null and bot_id is null and subtype is null and parsed is null
+        order by ts desc`
+        return SQLTable.db.query(query)
       },
       ts_last_msg: (channel_id) => {
         let query = `SELECT max(ts) FROM channel_history WHERE channel_id = '${channel_id}'`

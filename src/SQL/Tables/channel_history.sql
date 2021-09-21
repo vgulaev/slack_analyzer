@@ -3,10 +3,11 @@ CREATE TABLE channel_history (
   channel_id character varying(255),
   "user" character varying(255),
   bot_id character varying(255),
-  ts NUMERIC(20, 6),
   reply_count INTEGER,
-  parsed boolean,
+  subtype character varying(255),
+  ts NUMERIC(20, 6),
   msg_date_time timestamp without time zone,
   created_at timestamp without time zone,
+  parsed boolean,
   raw json
 );

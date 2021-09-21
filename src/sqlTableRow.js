@@ -20,21 +20,21 @@ class SQLTableRow {
       }
     })
     let keys = Object.keys(obj)
-    let values = keys.map(k => 'raw' == k ? `$VG$${obj[k]}$VG$`: `'${obj[k]}'`).join(',')
-    return `INSERT INTO ${this.meta.name} (${keys.map(k => `"${k}"`).join(',')}) VALUES(${values})`
+    return {
+      sql: `INSERT INTO ${this.meta.name} (${keys.map(k => `"${k}"`).join(',')}) VALUES(${keys.map((k, i) => `$${i+1}`)})`,
+      val: keys.map(k => obj[k])
+    }
   }
 
   save() {
     let query = this.insertQuery()
     return new Promise((resolve, rej) => {
-      SQLTableRow.db.client.query(query, (err, res) => {
+      SQLTableRow.db.client.query(query.sql, query.val, (err, res) => {
         let result = false
         if (res) {
           result = (1 == res.rowCount)
         } else {
           result = err
-          // console.log(this.raw)
-          // exit()
         }
         resolve(result)
       })

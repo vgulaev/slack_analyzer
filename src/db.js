@@ -27,9 +27,9 @@ class DB {
     })
   }
 
-  query(sql) {
+  query(sql, params = []) {
     return new Promise((resolve, rej) => {
-      this.client.query(sql, (err, res) => resolve({err: err, res: res}))
+      this.client.query(sql, params, (err, res) => resolve({err: err, res: res}))
     })
   }
 
